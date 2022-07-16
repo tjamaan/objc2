@@ -78,7 +78,6 @@ macro_rules! __msg_send_parse {
     };
 
     // Handle calls without comma between `selector: argument` pair.
-    // TODO: Deprecate this
     {
         ($out_macro:path)
         @($error_fn:ident)
@@ -87,7 +86,17 @@ macro_rules! __msg_send_parse {
         @()
         @($($selector:ident : $argument:expr)*)
         $($macro_args:tt)*
-    } => {
+    } => {{
+        $crate::__comma_between_args!(
+            @($(
+                ", ",
+                stringify!($selector),
+                ": ",
+                stringify!($argument),
+            )+)
+            $($macro_args)*
+        );
+
         $crate::__msg_send_parse! {
             ($out_macro)
             @($error_fn)
@@ -96,5 +105,63 @@ macro_rules! __msg_send_parse {
             @($($selector : $argument),*)
             $($macro_args)*
         }
+    }};
+}
+
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __comma_between_args {
+    (
+        @__output
+        @($($args:tt)*)
+    ) => {
+        #[deprecated = concat!(
+            "using msg_send! without a comma between arguments is ",
+            "technically not valid macro syntax, and may break in a future ",
+            "version of Rust. You should use the following instead:\nmsg_send![",
+            $($args)*
+            "]"
+        )]
+        #[inline]
+        fn __msg_send_missing_comma() {}
+        __msg_send_missing_comma();
+    };
+    (
+        @($($args:tt)*)
+        @(__send_super_message_static)
+        @($obj:expr)
+    ) => {
+        $crate::__comma_between_args! {
+            @__output
+            @(stringify!(super($obj)), $($args)*)
+        }
+    };
+    (
+        @($($args:tt)*)
+        @(send_super_message)
+        @($obj:expr, $superclass:expr)
+    ) => {
+        $crate::__comma_between_args! {
+            @__output
+            @(stringify!(super($obj, $superclass)), $($args)*)
+        }
+    };
+    (
+        @($($args:tt)*)
+        @(send_message)
+        @($obj:expr)
+    ) => {
+        $crate::__comma_between_args! {
+            @__output
+            @(stringify!($obj), $($args)*)
+        }
+    };
+    (
+        @($($args:tt)*)
+        @($fn:ident)
+        $($macro_args:tt)*
+    ) => {
+        compile_error!("tmp")
     };
 }

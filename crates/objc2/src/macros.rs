@@ -630,9 +630,9 @@ macro_rules! __class_inner {
 ///
 /// # Specification
 ///
-/// The syntax is similar to the message syntax in Objective-C, except with
-/// an (optional, though consider that deprecated) comma between arguments,
-/// since that works much better with rustfmt.
+/// The syntax is somewhat similar to the message syntax in Objective-C,
+/// except with a comma between arguments (eliding the comma was previously
+/// possible, but is now deprecated).
 ///
 /// The first expression, know as the "receiver", can be any type that
 /// implements [`MessageReceiver`], like a reference or a pointer to an

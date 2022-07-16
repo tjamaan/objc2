@@ -56,6 +56,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 * **BREAKING**: `declare_class!` uses `ConformsTo<...>` instead of the
   temporary `Protocol<...>` syntax.
 
+### Deprecated
+* Deprecated using `msg_send!` without a comma between arguments. See the
+  following example for migration instructions:
+  ```rust
+  // Before
+  let _: NSInteger = msg_send![
+      obj,
+      addTrackingRect:rect
+      owner:obj
+      userData:ptr::null_mut::<c_void>()
+      assumeInside:Bool::NO
+  ];
+  // After
+  let _: NSInteger = msg_send![
+      obj,
+      addTrackingRect: rect,
+      owner: obj,
+      userData: ptr::null_mut::<c_void>(),
+      assumeInside: false,
+  ];
+  ```
+
 ### Fixed
 * Fixed duplicate selector extraction in `extern_methods!`.
 * Fixed using `deprecated` attributes in `declare_class!`.
