@@ -198,8 +198,32 @@ impl<'a> Helper<'a> {
             Pointer(t) => Self::Indirection(IndirectionKind::Pointer, t),
             Atomic(t) => Self::Indirection(IndirectionKind::Atomic, t),
             Array(len, item) => Self::Array(len, item),
-            Struct(name, fields) => Self::Container(ContainerKind::Struct, name, fields),
-            Union(name, members) => Self::Container(ContainerKind::Union, name, members),
+            Struct(name, fields) => {
+                if !verify_name(name) {
+                    panic!("Struct name was not a valid identifier");
+                }
+                Self::Container(ContainerKind::Struct, name, fields)
+            }
+            Union(name, members) => {
+                if !verify_name(name) {
+                    panic!("Union name was not a valid identifier");
+                }
+                Self::Container(ContainerKind::Union, name, members)
+            }
         }
     }
+}
+
+/// Check whether the name is a valid identifier
+const fn verify_name(name: &str) -> bool {
+    let bytes = name.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        let byte = bytes[i];
+        if !(byte.is_ascii_alphanumeric() || byte == b'_') {
+            return false;
+        }
+        i += 1;
+    }
+    true
 }
