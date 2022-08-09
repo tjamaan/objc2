@@ -115,7 +115,6 @@ mod ivar;
 mod ivar_forwarding_impls;
 
 use alloc::format;
-use alloc::string::ToString;
 use core::mem;
 use core::mem::ManuallyDrop;
 use core::ptr;
@@ -409,7 +408,7 @@ impl ClassBuilder {
     /// happens if there already was an ivar with that name.
     pub fn add_ivar<T: Encode>(&mut self, name: &str) {
         let c_name = CString::new(name).unwrap();
-        let encoding = CString::new(T::ENCODING.to_string()).unwrap();
+        let encoding = T::ENCODING_CSTR;
         let size = mem::size_of::<T>();
         let align = log2_align_of::<T>();
         let success = Bool::from_raw(unsafe {

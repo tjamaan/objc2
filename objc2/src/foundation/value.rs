@@ -1,11 +1,10 @@
-use alloc::string::ToString;
 use core::ffi::c_void;
 use core::fmt;
 use core::hash;
 use core::mem::MaybeUninit;
 use core::ptr::NonNull;
 use core::str;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::os::raw::c_char;
 
 use super::{NSCopying, NSObject, NSPoint, NSRange, NSRect, NSSize};
@@ -65,7 +64,7 @@ impl NSValue {
     pub fn new<T: 'static + Copy + Encode>(value: T) -> Id<Self, Shared> {
         let bytes: *const T = &value;
         let bytes: *const c_void = bytes.cast();
-        let encoding = CString::new(T::ENCODING.to_string()).unwrap();
+        let encoding = T::ENCODING_CSTR;
         unsafe {
             msg_send_id![
                 msg_send_id![Self::class(), alloc],
