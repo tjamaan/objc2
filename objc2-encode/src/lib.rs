@@ -110,9 +110,6 @@ mod encode;
 mod encoding;
 mod helper;
 mod parse;
-
-// Will be used at some point when generic constants are available
-#[allow(dead_code)]
 mod static_str;
 
 pub use self::encode::{Encode, EncodeArguments, RefEncode};

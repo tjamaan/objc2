@@ -14,10 +14,16 @@
 #[cfg(feature = "run")]
 fn main() {
     let t = trybuild::TestCases::new();
+
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("ui")
         .join("*.rs");
     t.compile_fail(path);
+
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("ui-ignore")
+        .join("*.rs");
+    t.pass(path);
 }
 
 #[cfg(not(feature = "run"))]
