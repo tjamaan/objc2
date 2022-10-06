@@ -1,9 +1,9 @@
 use core::fmt;
 use core::marker::PhantomData;
-use core::mem::ManuallyDrop;
+use core::mem::{self, ManuallyDrop};
 use core::ops::{Deref, DerefMut};
 use core::panic::{RefUnwindSafe, UnwindSafe};
-use core::ptr::NonNull;
+use core::ptr::{self, NonNull};
 
 use super::AutoreleasePool;
 use super::{Owned, Ownership, Shared};
@@ -521,6 +521,38 @@ impl<T: Message, O: Ownership> Id<T, O> {
             res, ptr,
             "objc_autoreleaseReturnValue did not return the same pointer"
         );
+        res
+    }
+
+    /// TODO
+    ///
+    /// # Safety
+    ///
+    /// TODO
+    // https://clang.llvm.org/docs/AutomaticReferenceCounting.html#passing-to-an-out-parameter-by-writeback
+    #[inline]
+    pub unsafe fn writeback<R, F>(this: &mut Option<Self>, f: F) -> R
+    where
+        F: FnOnce(&mut *mut T) -> R,
+    {
+        // 1. The argument is evaluated to yield a pointer p of type `U oq *`.
+        // 3. [...] a temporary of type `T __autoreleasing` is created and
+        // 4. [...] `*p` is read, and the result is written into the
+        // temporary with primitive semantics.
+        let mut ptr = match this {
+            Some(this) => this.ptr.as_ptr(),
+            None => ptr::null_mut(),
+        };
+        // 5. The address of the temporary is passed as the argument to the
+        // actual call.
+        let res = f(&mut ptr);
+        // SAFETY: Caller ensures that the pointer is either left as-is, or is
+        // safe to retain at this point.
+        let new = unsafe { Self::retain(ptr) };
+        // 6. After the call completes, the temporary is loaded with primitive
+        // semantics, and that value is assigned into `*p`.
+        let old = mem::replace(this, new);
+        drop(old);
         res
     }
 }
