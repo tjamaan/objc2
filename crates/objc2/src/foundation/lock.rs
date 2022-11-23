@@ -26,7 +26,6 @@ extern_class!(
 );
 
 unsafe impl ConformsTo<dyn NSLocking> for NSLock {}
-unsafe impl NSLocking for NSLock {}
 
 extern_methods!(
     unsafe impl NSLock {
