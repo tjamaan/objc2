@@ -186,7 +186,7 @@ macro_rules! __extern_protocol_rewrite_methods {
             ($crate::__extern_protocol_method_out)
             ($($args)*)
             @($(#[$($m)*])*)
-            @($v unsafe fn $name($($args)*) $(-> $ret)? where Self: Sized + $crate::Message)
+            @($v unsafe fn $name($($args)*) $(-> $ret)?)
             // Macro will add:
             // @(kind)
             // @(args_start)
@@ -209,7 +209,7 @@ macro_rules! __extern_protocol_rewrite_methods {
             ($crate::__extern_protocol_method_out)
             ($($args)*)
             @($(#[$($m)*])*)
-            @($v fn $name($($args)*) $(-> $ret)? where Self: Sized + $crate::Message)
+            @($v fn $name($($args)*) $(-> $ret)?)
             // Macro will add:
             // @(kind)
             // @(args_start)
@@ -237,7 +237,10 @@ macro_rules! __extern_protocol_method_out {
     } => {
         $crate::__strip_custom_attributes! {
             @($(#[$($m)*])*)
-            @($($function_start)* {
+            @($($function_start)*
+            where
+                Self: $crate::__macro_helpers::Sized + $crate::Message
+            {
                 #[allow(unused_unsafe)]
                 unsafe {
                     $crate::__extract_custom_attributes! {
@@ -262,10 +265,37 @@ macro_rules! __extern_protocol_method_out {
         @($(#[$($m:tt)*])*)
         @($($function_start:tt)*)
         @(class_method)
-        @($($args_start:tt)*)
+        @(
+            _: $cls_ty:ty,
+            _: $sel_ty:ty,
+        )
         @($($args_rest:tt)*)
     } => {
-        compile_error!("class methods are not supported in `extern_protocol!`");
+        $crate::__strip_custom_attributes! {
+            @($(#[$($m)*])*)
+            @($($function_start)*
+            where
+                Self: $crate::__macro_helpers::Sized + $crate::ClassType
+            {
+                #[allow(unused_unsafe)]
+                unsafe {
+                    $crate::__extract_custom_attributes! {
+                        @($(#[$($m)*])*)
+                        @($crate::__extern_protocol_method_body)
+                        @(
+                            @(<Self as $crate::ClassType>::class())
+                            @($($args_rest)*)
+                            // Macro will add:
+                            // @(method attribute)
+                            // @(optional attribute)
+                        )
+                        @()
+                        @()
+                    }
+                }
+            })
+            @()
+        }
     };
 }
 

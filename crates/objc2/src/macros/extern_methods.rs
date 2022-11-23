@@ -421,7 +421,7 @@ macro_rules! __inner_extern_methods {
             _: $sel_ty:ty,
         )
     } => {
-        Self::class()
+        <Self as $crate::ClassType>::class()
     };
 }
 
