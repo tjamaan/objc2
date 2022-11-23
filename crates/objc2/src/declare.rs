@@ -638,14 +638,13 @@ mod tests {
     use crate::{declare_class, extern_protocol, msg_send, ClassType, ConformsTo, ProtocolType};
 
     extern_protocol!(
-        struct NSCopyingObject;
-
-        unsafe impl ProtocolType for NSCopyingObject {
-            const NAME: &'static str = "NSCopying";
-
-            #[allow(unused)]
+        unsafe trait NSCopyingObject {
             #[method(copyWithZone:)]
             fn copy_with_zone(&self, _zone: *const NSZone) -> *mut Self;
+        }
+
+        unsafe impl ProtocolType for dyn NSCopyingObject {
+            const NAME: &'static str = "NSCopying";
         }
     );
 
@@ -816,7 +815,7 @@ mod tests {
                 const NAME: &'static str = "TestDeclareClassProtocolNotFound";
             }
 
-            unsafe impl ConformsTo<NSCopyingObject> for Custom {
+            unsafe impl ConformsTo<dyn NSCopyingObject> for Custom {
                 #[method(copyWithZone:)]
                 #[allow(unreachable_code)]
                 fn copy_with_zone(&self, _zone: *const NSZone) -> *mut Self {
@@ -826,7 +825,7 @@ mod tests {
         );
 
         let cls = Custom::class();
-        assert!(cls.conforms_to(NSCopyingObject::protocol().unwrap()));
+        assert!(cls.conforms_to(<dyn NSCopyingObject>::protocol().unwrap()));
     }
 
     #[test]
@@ -867,7 +866,7 @@ mod tests {
                 const NAME: &'static str = "TestDeclareClassMissingProtocolMethod";
             }
 
-            unsafe impl ConformsTo<NSCopyingObject> for Custom {
+            unsafe impl ConformsTo<dyn NSCopyingObject> for Custom {
                 // Missing required method
             }
         );
@@ -886,7 +885,7 @@ mod tests {
                 const NAME: &'static str = "TestDeclareClassInvalidProtocolMethod";
             }
 
-            unsafe impl ConformsTo<NSCopyingObject> for Custom {
+            unsafe impl ConformsTo<dyn NSCopyingObject> for Custom {
                 // Override with a bad return type
                 #[method(copyWithZone:)]
                 fn copy_with_zone(&self, _zone: *const NSZone) -> u8 {
@@ -912,7 +911,7 @@ mod tests {
                 const NAME: &'static str = "TestDeclareClassExtraProtocolMethod";
             }
 
-            unsafe impl ConformsTo<NSCopyingObject> for Custom {
+            unsafe impl ConformsTo<dyn NSCopyingObject> for Custom {
                 #[method(copyWithZone:)]
                 #[allow(unreachable_code)]
                 fn copy_with_zone(&self, _zone: *const NSZone) -> *mut Self {

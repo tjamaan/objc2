@@ -65,196 +65,78 @@
 #[doc(alias = "@protocol")]
 #[macro_export]
 macro_rules! extern_protocol {
-    // Note: We're not using `$(...)?`, that causes a "local ambiguity error".
     (
         $(#[$m:meta])*
-        $v:vis struct $name:ident;
-
-        $(#[conforms_to($($conforms_to:ty),+)])?
-        unsafe impl ProtocolType for $for:ty {
-            type Parent = $parent:ty;
-
-            const NAME: &'static str = $name_const:literal;
-
+        $v:vis unsafe trait $name:ident $(: $conforms_to:ident $(+ $conforms_to_rest:ident)*)? {
             $($methods:tt)*
+        }
+
+        unsafe impl ProtocolType for dyn $for:ident {
+            $(const NAME: &'static str = $name_const:literal;)?
         }
     ) => {
-        $crate::__extern_protocol_inner! {
-            $(#[$m])*
-            $v struct $name;
-
-            #[conforms_to($($($conforms_to),+)?)]
-            unsafe impl ProtocolType for $for {
-                type Parent = $parent;
-
-                const NAME: &'static str = $name_const;
-            }
-
-            impl {
-                $($methods)*
-            }
-        }
-
-        // SAFETY: Specifying a protocol as the parent protocol signifies that
-        // it conforms to it.
-        unsafe impl $crate::ConformsTo<$parent> for $for {}
-    };
-    (
-        $(#[$m:meta])*
-        $v:vis struct $name:ident;
-
-        $(#[conforms_to($($conforms_to:ty),+)])?
-        unsafe impl ProtocolType for $for:ty {
-            type Parent = $parent:ty;
-
-            $($methods:tt)*
-        }
-    ) => {
-        $crate::__extern_protocol_inner! {
-            $(#[$m])*
-            $v struct $name;
-
-            #[conforms_to($($($conforms_to),+)?)]
-            unsafe impl ProtocolType for $for {
-                type Parent = $parent;
-
-                const NAME: &'static str = $crate::__macro_helpers::stringify!($name);
-            }
-
-            impl {
-                $($methods)*
-            }
-        }
-
-        // SAFETY: Specifying a protocol as the parent protocol signifies that
-        // it conforms to it.
-        unsafe impl $crate::ConformsTo<$parent> for $for {}
-    };
-    (
-        $(#[$m:meta])*
-        $v:vis struct $name:ident;
-
-        $(#[conforms_to($($conforms_to:ty),+)])?
-        unsafe impl ProtocolType for $for:ty {
-            const NAME: &'static str = $name_const:literal;
-
-            $($methods:tt)*
-        }
-    ) => {
-        $crate::__extern_protocol_inner! {
-            $(#[$m])*
-            $v struct $name;
-
-            #[conforms_to($($($conforms_to),+)?)]
-            unsafe impl ProtocolType for $for {
-                type Parent = $crate::runtime::Object;
-
-                const NAME: &'static str = $name_const;
-            }
-
-            impl {
-                $($methods)*
-            }
-        }
-    };
-    (
-        $(#[$m:meta])*
-        $v:vis struct $name:ident;
-
-        $(#[conforms_to($($conforms_to:ty),+)])?
-        unsafe impl ProtocolType for $for:ty {
-            $($methods:tt)*
-        }
-    ) => {
-        $crate::__extern_protocol_inner! {
-            $(#[$m])*
-            $v struct $name;
-
-            #[conforms_to($($($conforms_to),+)?)]
-            unsafe impl ProtocolType for $for {
-                type Parent = $crate::runtime::Object;
-
-                const NAME: &'static str = $crate::__macro_helpers::stringify!($name);
-            }
-
-            impl {
-                $($methods)*
-            }
-        }
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! __extern_protocol_inner {
-    {
-        $(#[$m:meta])*
-        $v:vis struct $name:ident;
-
-        #[conforms_to($($conforms_to:ty),* $(,)?)]
-        unsafe impl ProtocolType for $for:ty {
-            type Parent = $parent:ty;
-            const NAME: &'static str = $name_const:expr;
-        }
-
-        impl {
-            $($methods:tt)*
-        }
-    } => {
-        // Create struct that derefs to the parent
-        $crate::__inner_extern_class!(
-            @__inner
-
-            $(#[$m])*
-            $v struct ($name) {}
-
-            unsafe impl () for $for {
-                INHERITS = [$parent];
-            }
-        );
-
-        // SAFETY: The specified name is ensured by caller to be a protocol,
-        // and is correctly defined.
-        unsafe impl ProtocolType for $for {
-            const NAME: &'static str = $name_const;
-            const __INNER: () = ();
-        }
-
-        $(
-            // SAFETY: Caller ensures that the protocol actually conforms to
-            // these protocols.
-            unsafe impl $crate::ConformsTo<$conforms_to> for $for {}
-        )*
-
-        $crate::__impl_as_ref_borrow! {
-            impl () for $for {
-                fn as_ref(&self) {
-                    <Self as $crate::ConformsTo<_>>::as_protocol(self)
-                }
-                fn as_mut(&mut self) {
-                    <Self as $crate::ConformsTo<_>>::as_protocol_mut(self)
-                }
-            }
-
-            @($($conforms_to,)*)
-        }
-
-        impl $for {
+        $(#[$m])*
+        $v unsafe trait $name $(: $conforms_to $(+ $conforms_to_rest)*)? {
             $crate::__extern_protocol_rewrite_methods! {
                 $($methods)*
             }
         }
 
-        const _: () = {
-            if $crate::__macro_helpers::size_of::<$name>() != 0 {
-                panic!(concat!(
-                    "the struct ",
-                    stringify!($name),
-                    " is not zero-sized!",
-                ))
-            }
-        };
+        $crate::__extern_protocol_conforms_to! {
+            @(dyn $for)
+            @($($conforms_to $($conforms_to_rest)*)?)
+        }
+
+        // SAFETY: The specified name is ensured by caller to be a protocol,
+        // and is correctly defined.
+        unsafe impl ProtocolType for dyn $for {
+            const NAME: &'static str = $crate::__select_name!($name; $($name_const)?);
+            const __INNER: () = ();
+        }
+
+        unsafe impl $name for $crate::ProtocolObject<dyn $for> {}
     }
+}
+
+/// tt-munch each inherited protocol.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __extern_protocol_conforms_to {
+    // Base case
+    (
+        @($for:ty)
+        @()
+    ) => {};
+
+    // Special-case NSObject
+    // (
+    //     @($for:ty)
+    //     @(NSObject $($rest:tt)*)
+    // ) => {
+    //     // SAFETY: Caller ensures that the protocol conforms to NSObject.
+    //     unsafe impl $crate::ConformsTo<NSObject> for $crate::ProtocolObject<$for> {}
+    //
+    //     $crate::__extern_protocol_conforms_to! {
+    //         @($for)
+    //         @($($rest)*)
+    //     }
+    // };
+
+    // Implement for each protocol
+    (
+        @($for:ty)
+        @($protocol:ident $($rest:tt)*)
+    ) => {
+        // SAFETY: Caller ensures that the protocol actually conforms to
+        // these protocols.
+        unsafe impl $crate::ConformsTo<dyn $protocol> for $crate::ProtocolObject<$for> {}
+        unsafe impl $protocol for $crate::ProtocolObject<$for> {}
+
+        $crate::__extern_protocol_conforms_to! {
+            @($for)
+            @($($rest)*)
+        }
+    };
 }
 
 /// tt-munch each protocol method.
@@ -275,7 +157,7 @@ macro_rules! __extern_protocol_rewrite_methods {
             ($crate::__extern_protocol_method_out)
             ($($args)*)
             @($(#[$($m)*])*)
-            @($v unsafe fn $name($($args)*) $(-> $ret)?)
+            @($v unsafe fn $name($($args)*) $(-> $ret)? where Self: Sized + $crate::Message)
             // Macro will add:
             // @(kind)
             // @(args_start)
@@ -298,7 +180,7 @@ macro_rules! __extern_protocol_rewrite_methods {
             ($crate::__extern_protocol_method_out)
             ($($args)*)
             @($(#[$($m)*])*)
-            @($v fn $name($($args)*) $(-> $ret)?)
+            @($v fn $name($($args)*) $(-> $ret)? where Self: Sized + $crate::Message)
             // Macro will add:
             // @(kind)
             // @(args_start)

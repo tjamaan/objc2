@@ -5,15 +5,15 @@ use crate::{extern_class, extern_methods, extern_protocol, ClassType, ConformsTo
 // TODO: Proper Send/Sync impls here
 
 extern_protocol!(
-    pub struct NSLocking;
-
-    unsafe impl ProtocolType for NSLocking {
+    pub unsafe trait NSLocking {
         #[method(lock)]
-        pub unsafe fn lock(&self);
+        unsafe fn lock(&self);
 
         #[method(unlock)]
-        pub unsafe fn unlock(&self);
+        unsafe fn unlock(&self);
     }
+
+    unsafe impl ProtocolType for dyn NSLocking {}
 );
 
 extern_class!(
@@ -25,7 +25,8 @@ extern_class!(
     }
 );
 
-unsafe impl ConformsTo<NSLocking> for NSLock {}
+unsafe impl ConformsTo<dyn NSLocking> for NSLock {}
+unsafe impl NSLocking for NSLock {}
 
 extern_methods!(
     unsafe impl NSLock {
@@ -46,17 +47,27 @@ extern_methods!(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ProtocolObject;
 
     #[test]
     fn lock_unlock() {
         let lock = NSLock::new();
-        let locking: &NSLocking = lock.as_protocol();
         unsafe {
-            locking.lock();
+            lock.lock();
             assert!(!lock.try_lock());
-            locking.unlock();
+            lock.unlock();
             assert!(lock.try_lock());
-            locking.unlock();
+            lock.unlock();
+        }
+    }
+
+    #[test]
+    fn lock_unlock_on_protocol() {
+        let obj = NSLock::new();
+        let proto: &ProtocolObject<dyn NSLocking> = obj.as_protocol();
+        unsafe {
+            proto.lock();
+            proto.unlock();
         }
     }
 }
