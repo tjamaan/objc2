@@ -1,7 +1,9 @@
+use core::hash;
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 
 use crate::encode::{Encoding, RefEncode};
+use crate::foundation::NSObject;
 use crate::runtime::{Object, Protocol};
 use crate::Message;
 
@@ -19,6 +21,17 @@ unsafe impl<P: ?Sized + ProtocolType> RefEncode for ProtocolObject<P> {
 unsafe impl<P: ?Sized + ProtocolType> Message for ProtocolObject<P> {}
 
 // TODO: Implement Hash, Eq, PartialEq, Debug
+
+impl<P: ?Sized + ProtocolType> hash::Hash for ProtocolObject<P>
+where
+    Self: ConformsTo<NSObject>,
+{
+    #[inline]
+    fn hash<H: hash::Hasher>(&self, _state: &mut H) {
+        // self.as_protocol::<NSObject>().hash(state);
+        todo!()
+    }
+}
 
 impl<P, T> AsRef<ProtocolObject<P>> for ProtocolObject<T>
 where
