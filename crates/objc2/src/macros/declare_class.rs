@@ -348,9 +348,27 @@ macro_rules! declare_class {
                 __priv: (),
             }
 
+            impl $ivar {
+                #[inline]
+                unsafe fn __offset_ptr() -> &'static $crate::__macro_helpers::IvarStaticHelper {
+                    static mut OFFSET: $crate::__macro_helpers::IvarStaticHelper
+                        = $crate::__macro_helpers::IvarStaticHelper::new();
+                    #[allow(unused_unsafe)]
+                    unsafe { &OFFSET }
+                }
+            }
+
             unsafe impl $crate::declare::IvarType for $ivar {
                 type Type = $ivar_ty;
                 const NAME: &'static str = stringify!($ivar);
+
+                #[inline]
+                unsafe fn __offset(
+                    _ptr: $crate::__macro_helpers::NonNull<$crate::runtime::Object>,
+                ) -> $crate::__macro_helpers::isize {
+                    #[allow(unused_unsafe)]
+                    unsafe { Self::__offset_ptr().get() }
+                }
             }
         )*
 
@@ -424,6 +442,12 @@ macro_rules! declare_class {
                     );
 
                     let _cls = builder.register();
+
+                    $(
+                        unsafe {
+                            $ivar::__offset_ptr().set::<$ivar>(_cls);
+                        }
+                    )*
                 });
 
                 // We just registered the class, so it should be available

@@ -548,6 +548,19 @@ LBB9_60:
 LBB9_64:
 	mov	rdi, qword ptr [rbp - 168]
 	call	SYM(objc2::declare::ClassBuilder::register::GENERATED_ID, 0)
+	mov	rbx, rax
+	lea	rsi, [rip + l_anon.[ID].16]
+	lea	rcx, [rip + l_anon.[ID].17]
+	mov	edx, 5
+	mov	rdi, rax
+	call	SYM(objc2::runtime::ivar_offset::GENERATED_ID, 0)
+	mov	qword ptr [rip + SYM(<test_declare_class[CRATE_ID]::ivar1>::__offset_ptr::OFFSET, 0)], rax
+	lea	rsi, [rip + l_anon.[ID].18]
+	lea	rcx, [rip + l_anon.[ID].19]
+	mov	edx, 5
+	mov	rdi, rbx
+	call	SYM(objc2::runtime::ivar_offset::GENERATED_ID, 0)
+	mov	qword ptr [rip + SYM(<test_declare_class[CRATE_ID]::ivar2>::__offset_ptr::OFFSET, 0)], rax
 	add	rsp, 184
 	pop	rbx
 	pop	r12
@@ -1196,29 +1209,12 @@ LBB22_2:
 _access:
 	push	rbp
 	mov	rbp, rsp
-	push	r14
-	push	rbx
 	call	_get_obj
-	mov	rbx, rax
-	mov	rdi, rax
-	call	SYM(objc2::runtime::Object::class::GENERATED_ID, 0)
-	lea	rsi, [rip + l_anon.[ID].16]
-	lea	rcx, [rip + l_anon.[ID].17]
-	mov	edx, 5
-	mov	rdi, rax
-	call	SYM(objc2::runtime::ivar_offset::GENERATED_ID, 0)
-	movzx	r14d, byte ptr [rbx + rax]
-	mov	rdi, rbx
-	call	SYM(objc2::runtime::Object::class::GENERATED_ID, 0)
-	lea	rsi, [rip + l_anon.[ID].18]
-	lea	rcx, [rip + l_anon.[ID].19]
-	mov	edx, 5
-	mov	rdi, rax
-	call	SYM(objc2::runtime::ivar_offset::GENERATED_ID, 0)
-	mov	rdx, qword ptr [rbx + rax]
-	mov	eax, r14d
-	pop	rbx
-	pop	r14
+	mov	rcx, qword ptr [rip + SYM(<test_declare_class[CRATE_ID]::ivar1>::__offset_ptr::OFFSET, 0)]
+	movzx	ecx, byte ptr [rax + rcx]
+	mov	rdx, qword ptr [rip + SYM(<test_declare_class[CRATE_ID]::ivar2>::__offset_ptr::OFFSET, 0)]
+	mov	rdx, qword ptr [rax + rdx]
+	mov	eax, ecx
 	pop	rbp
 	ret
 
@@ -1266,13 +1262,8 @@ SYM(<test_declare_class[CRATE_ID]::Custom>::__objc2_dealloc, 0):
 	push	rbx
 	sub	rsp, 72
 	mov	r14, rdi
-	call	SYM(objc2::runtime::Object::class::GENERATED_ID, 0)
-	lea	rsi, [rip + l_anon.[ID].18]
-	lea	rcx, [rip + l_anon.[ID].19]
-	mov	edx, 5
-	mov	rdi, rax
-	call	SYM(objc2::runtime::ivar_offset::GENERATED_ID, 0)
-	mov	rdi, qword ptr [r14 + rax]
+	mov	rax, qword ptr [rip + SYM(<test_declare_class[CRATE_ID]::ivar2>::__offset_ptr::OFFSET, 0)]
+	mov	rdi, qword ptr [rdi + rax]
 	test	rdi, rdi
 	je	LBB25_2
 	call	_objc_release
@@ -1603,6 +1594,10 @@ L_anon.[ID].49:
 l_anon.[ID].50:
 	.ascii	"crates/$DIR/lib.rs"
 
+	.globl	SYM(<test_declare_class[CRATE_ID]::ivar1>::__offset_ptr::OFFSET, 0)
+.zerofill __DATA,__common,SYM(<test_declare_class[CRATE_ID]::ivar1>::__offset_ptr::OFFSET, 0),8,3
+	.globl	SYM(<test_declare_class[CRATE_ID]::ivar2>::__offset_ptr::OFFSET, 0)
+.zerofill __DATA,__common,SYM(<test_declare_class[CRATE_ID]::ivar2>::__offset_ptr::OFFSET, 0),8,3
 	.section	__DATA,__const
 	.p2align	3
 l_anon.[ID].51:

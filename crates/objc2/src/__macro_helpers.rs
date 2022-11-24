@@ -1,17 +1,17 @@
 #[cfg(all(debug_assertions, feature = "verify"))]
 use alloc::vec::Vec;
+use core::cell::Cell;
 use core::ptr;
 #[cfg(all(debug_assertions, feature = "verify"))]
 use std::collections::HashSet;
 
-use crate::declare::ClassBuilder;
-use crate::declare::MethodImplementation;
+use crate::declare::{ClassBuilder, InnerIvarType, IvarType, MethodImplementation};
 use crate::encode::Encode;
 use crate::message::__TupleExtender;
 use crate::rc::{Allocated, Id, Ownership, Shared};
 #[cfg(all(debug_assertions, feature = "verify"))]
 use crate::runtime::MethodDescription;
-use crate::runtime::{Class, Object, Protocol, Sel};
+use crate::runtime::{ivar_offset, Class, Object, Protocol, Sel};
 use crate::{Message, MessageArguments, MessageReceiver};
 use crate::{__sel_data, __sel_inner};
 
@@ -24,8 +24,8 @@ pub use core::convert::{AsMut, AsRef};
 pub use core::mem::size_of;
 pub use core::ops::{Deref, DerefMut};
 pub use core::option::Option::{self, None, Some};
-pub use core::primitive::{bool, str, u8};
-pub use core::ptr::drop_in_place;
+pub use core::primitive::{bool, isize, str, u8};
+pub use core::ptr::{drop_in_place, NonNull};
 pub use core::{compile_error, concat, panic, stringify};
 // TODO: Use `core::cell::LazyCell`
 pub use std::sync::Once;
@@ -629,6 +629,29 @@ impl ClassProtocolMethodsBuilder<'_, '_> {
                 }
             }
         }
+    }
+}
+
+pub struct IvarStaticHelper {
+    offset: Cell<isize>,
+}
+
+impl IvarStaticHelper {
+    #[inline]
+    pub const fn new() -> Self {
+        Self {
+            offset: Cell::new(0),
+        }
+    }
+
+    pub fn set<T: IvarType>(&self, cls: &Class) {
+        let offset = ivar_offset(cls, T::NAME, &T::Type::__ENCODING);
+        self.offset.set(offset);
+    }
+
+    #[inline]
+    pub fn get(&self) -> isize {
+        self.offset.get()
     }
 }
 
